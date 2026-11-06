@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CiteSage — citation-grounded research assistant</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>CiteSage</h1>
+      <p class="tagline">Answers grounded in your papers — every claim cited.</p>
+    </div>
+    <div id="status-pill" class="pill pill-loading">checking…</div>
+  </header>
+
+  <div id="key-banner" class="banner hidden">
+    Add a Groq or Gemini key to <code>.env</code> to enable <strong>Ask</strong> —
+    <strong>Search</strong> works without one.
+    <span class="banner-keys">CITESAGE_GROQ_API_KEY / CITESAGE_GEMINI_API_KEY</span>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <section class="card">
+        <h2>Fetch papers</h2>
+        <form id="fetch-form">
+          <label for="fetch-topic">Topic (arXiv search)</label>
+          <input id="fetch-topic" type="text" placeholder="e.g. retrieval augmented generation" required>
+          <label for="fetch-count">Max papers</label>
+          <input id="fetch-count" type="number" value="5" min="1" max="50">
+          <button type="submit" id="fetch-btn">Fetch &amp; index</button>
+        </form>
+        <div id="job-progress" class="job hidden">
+          <div class="job-step" id="job-step">starting…</div>
+          <div class="job-detail" id="job-detail"></div>
+        </div>
+        <div id="job-error" class="notice notice-error hidden"></div>
+      </section>
+
+      <section class="card library">
+        <h2>Library <span id="paper-count" class="count"></span></h2>
+        <p id="library-empty" class="muted hidden">
+          No papers yet. Fetch a topic above and they will appear here.
+        </p>
+        <ul id="paper-list" class="papers"></ul>
+      </section>
+    </aside>
+
+    <main class="panel">
+      <nav class="tabs" role="tablist">
+        <button id="tab-ask" class="tab active" role="tab">Ask</button>
+        <button id="tab-search" class="tab" role="tab">Search</button>
+      </nav>
+
+      <section id="view-ask">
+        <form id="ask-form">
+          <label for="ask-input">Ask a question about your papers</label>
+          <textarea id="ask-input" rows="3"
+            placeholder="e.g. How does reciprocal rank fusion combine dense and sparse results?"></textarea>
+          <button type="submit" id="ask-btn">Ask</button>
+        </form>
+        <div id="ask-status" class="muted hidden">Thinking…</div>
+        <div id="ask-notice" class="notice hidden"></div>
+        <article id="answer" class="answer hidden"></article>
+        <div id="answer-meta" class="muted hidden"></div>
+        <div id="sources"></div>
+      </section>
+
+      <section id="view-search" class="hidden">
+        <form id="search-form">
+          <label for="search-input">Search the index (no LLM — raw ranked chunks)</label>
+          <input id="search-input" type="text" placeholder="e.g. BM25 tokenization">
+          <button type="submit" id="search-btn">Search</button>
+        </form>
+        <div id="search-status" class="muted hidden">Searching…</div>
+        <div id="search-notice" class="notice hidden"></div>
+        <div id="results"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

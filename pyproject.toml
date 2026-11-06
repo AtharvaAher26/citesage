@@ -26,12 +26,17 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+web = ["fastapi>=0.110", "uvicorn>=0.29"]
 
 [project.scripts]
 citesage = "citesage.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# Ship the web UI's static files inside the installed package.
+[tool.setuptools.package-data]
+"citesage.web" = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

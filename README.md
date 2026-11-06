@@ -107,6 +107,34 @@ If the evidence isn't there, `ask` says so:
 NO SUPPORTING EVIDENCE in the indexed papers for this question.
 ```
 
+## Web UI
+
+The same pipeline is available as a local web app — a library sidebar with
+fetch-and-index, plus Ask/Search panels — served by a thin FastAPI layer
+(`src/citesage/web/`) over the exact code paths the CLI uses.
+
+```bash
+pip install -e ".[web]"   # adds FastAPI + uvicorn (optional extra)
+citesage serve            # -> http://127.0.0.1:8000  (--host / --port to change)
+```
+
+Then open http://127.0.0.1:8000 in a browser.
+
+- **Library sidebar** — every fetched paper (title, authors, year, arXiv
+  link) and a fetch form: enter a topic, hit *Fetch & index*, and watch the
+  fetch → extract → chunk → index job progress live.
+- **Ask** — answers rendered with clickable `[n]` citation chips that jump
+  to the matching source card. Refusals ("no supporting evidence") are shown
+  as an honest notice, exactly like the CLI.
+- **Search** — raw hybrid-retrieval results with fused score, dense/sparse
+  ranks, citation and snippet. Works with **no LLM key configured**; Ask
+  needs a Groq/Gemini key in `.env` and says so in a banner when it's missing.
+- The header pill always shows index state (papers / chunks / ready), and
+  the JSON API is documented at http://127.0.0.1:8000/api/docs.
+
+_Screenshot placeholder — run `citesage serve`, fetch a topic, and drop a
+screenshot of the Ask view here._
+
 ## Configuration
 
 All settings live in one place (`src/citesage/config.py`) and can be
@@ -146,6 +174,7 @@ src/citesage/
   processing/     PDF text extraction, token-aware chunking
   retrieval/      Embeddings, Chroma vector store, BM25 index, hybrid (RRF) retriever
   generation/     LLM clients (Groq + Gemini fallback), grounded answerer, citation resolver
+  web/            Optional FastAPI app + vanilla-JS frontend (the `serve` command)
 tests/            Offline pytest suite
 ```
 

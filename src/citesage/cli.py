@@ -243,6 +243,27 @@ def ask(
         typer.echo(f"  warning: {answer.warning}")
     typer.echo(f"\n(answered by {answer.provider})")
 
+
+@app.command()
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host", help="Interface to bind"),
+    port: int = typer.Option(8000, "--port", help="Port to listen on"),
+) -> None:
+    """Serve the web UI locally (requires the 'web' extra)."""
+    try:
+        # Local imports: FastAPI/uvicorn are optional deps - the CLI must
+        # keep working for users who never installed the web extra.
+        import uvicorn
+
+        from citesage.web.app import create_app
+    except ImportError:
+        typer.echo("The web UI is not installed. Add it with:")
+        typer.echo('  pip install -e ".[web]"')
+        raise typer.Exit(code=1)
+    typer.echo(f"CiteSage web UI -> http://{host}:{port}  (Ctrl+C to stop)")
+    uvicorn.run(create_app(), host=host, port=port)
+
+
 if __name__ == "__main__":
     app()
 
