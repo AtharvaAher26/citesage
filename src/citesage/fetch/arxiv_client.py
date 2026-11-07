@@ -21,6 +21,22 @@ PDF_URL = "https://arxiv.org/pdf/{arxiv_id}"
 USER_AGENT = "citesage/0.1 (research assistant; educational use)"
 
 
+def _to_papers(results: list[arxiv.Result]) -> list[Paper]:
+    """Map arxiv.Result objects to our Paper model. One place, so topic
+    search and id lookup can never drift apart in what they store."""
+    return [
+        Paper(
+            arxiv_id=normalize_arxiv_id(r.entry_id),
+            title=" ".join(r.title.split()),
+            authors=[a.name for a in r.authors],
+            abstract=" ".join(r.summary.split()),
+            published=r.published,
+            categories=list(r.categories),
+        )
+        for r in results
+    ]
+
+
 class ArxivFetchError(Exception):
     """arXiv search failed after retries."""
 
@@ -61,18 +77,36 @@ class ArxivClient:
                 raise ArxivRateLimitError(message) from exc
             raise ArxivFetchError(f"arXiv search failed for {query!r}: {exc}") from exc
 
-        papers = [
-            Paper(
-                arxiv_id=normalize_arxiv_id(r.entry_id),
-                title=" ".join(r.title.split()),
-                authors=[a.name for a in r.authors],
-                abstract=" ".join(r.summary.split()),
-                published=r.published,
-                categories=list(r.categories),
-            )
-            for r in results
-        ]
+        papers = _to_papers(results)
         log.info("arxiv search ok: query=%r found=%d", query, len(papers))
+        return papers
+
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(4),
+        wait=wait_exponential(multiplier=10, min=10, max=120),
+        retry=retry_if_exception_type((ArxivRateLimitError,)),
+    )
+    def fetch_by_ids(self, arxiv_ids: list[str]) -> list[Paper]:
+        """Look up specific papers by arXiv ID (metadata only, no PDFs).
+
+        Exists for scripts/seed_demo.py, which needs three exact papers
+        rather than a topic search. PDF downloads stay in download_pdf,
+        exactly as with search results.
+        """
+        search = arxiv.Search(id_list=list(arxiv_ids))
+        try:
+            results = list(self._client.results(search))
+        except Exception as exc:
+            message = str(exc)
+            if "429" in message:
+                # Same throttling contract as search: back off, then give up.
+                log.warning("arXiv rate limit hit; backing off: %s", message)
+                raise ArxivRateLimitError(message) from exc
+            raise ArxivFetchError(f"arXiv id lookup failed for {arxiv_ids}: {exc}") from exc
+
+        papers = _to_papers(results)
+        log.info("arxiv id lookup ok: requested=%d found=%d", len(arxiv_ids), len(papers))
         return papers
 
     @retry(

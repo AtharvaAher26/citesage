@@ -26,6 +26,42 @@ PDFs      + pages     aware     + sparse (BM25)    (dense + BM25, RRF)
   validated and resolved to a real chunk. Unresolvable citations fail the
   answer rather than slipping through.
 
+## Try it in 2 minutes
+
+Both paths below seed the same **demo corpus** — three classic papers
+(the original RAG paper, DPR, and ColBERT) — so the moment the UI opens
+you can Search and Ask real questions of real papers. **Search works with
+no keys at all.** Ask needs one free LLM key (see
+[Groq](https://console.groq.com) / [Google AI Studio](https://aistudio.google.com)).
+
+**With Docker:**
+
+```bash
+docker build -t citesage .
+docker run -p 8000:8000 -e DEMO=1 -e CITESAGE_GROQ_API_KEY=<your-key> citesage
+# open http://127.0.0.1:8000
+```
+
+`DEMO=1` tells the container entrypoint to build the demo corpus on first
+start (later starts reuse it). Drop the `-e CITESAGE_GROQ_API_KEY=...`
+part and Search still works — only Ask is disabled. The embedding model
+is pre-downloaded at image build time, so the first query is not stalled
+on a download. Expect an image of roughly **2–2.5 GB** — PyTorch
+dominates the size (a CPU-only wheel is used; the default CUDA build
+would be several times larger).
+
+**Without Docker:**
+
+```bash
+make setup        # or the pip equivalent in Setup below, plus the web extra
+pip install -e ".[web]"
+make demo         # fetch + index the 3 demo papers into ./data
+citesage serve    # open http://127.0.0.1:8000
+```
+
+(`make demo` is `python scripts/seed_demo.py`; it is idempotent — a
+second run reports that the corpus is already seeded.)
+
 ## Requirements
 
 - Python 3.10+
